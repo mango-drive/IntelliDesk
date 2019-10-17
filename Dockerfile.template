@@ -8,7 +8,6 @@ FROM balenalib/%%BALENA_MACHINE_NAME%%-python:3-stretch-run
 RUN sudo apt-get update
 RUN sudo apt-get install libhdf5-dev libhdf5-serial-dev
 RUN sudo apt-get install libqtwebkit4 libqt4-test
-RUN sudo apt-get install libatlas-base-dev libqtgui4 python3-pyqt5
 
 # Set our working directory
 WORKDIR /usr/src/app
