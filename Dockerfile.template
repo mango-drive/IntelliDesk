@@ -1,6 +1,6 @@
 # base-image for python on any machine using a template variable,
 # see more about dockerfile templates here: https://www.balena.io/docs/learn/develop/dockerfile/
-FROM resin/%%RESIN_MACHINE_NAME%%-debian:stretch
+FROM balenalib/%%RESIN_MACHINE_NAME%%-debian:stretch
 
 
 # Install dependencies
