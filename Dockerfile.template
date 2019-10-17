@@ -12,7 +12,7 @@ RUN    apt-get update \
         python3-setuptools \
         python3-wheel \
         python3-numpy \
-        python3-scipy
+
 
 # use `install_packages` if you need to install dependencies,
 # for instance if you need git, just uncomment the line below.
