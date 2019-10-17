@@ -1,4 +1,4 @@
-FROM balenalib/raspberrypi3-debian:stretch-20180606
+FROM balenalib/raspberrypi3-debian:stretch-run
 
 RUN apt-get update && apt-get install -yq \
     unzip coreutils curl git python3 \
