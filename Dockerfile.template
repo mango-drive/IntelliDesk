@@ -16,8 +16,8 @@ COPY requirements.txt requirements.txt
 
 # pip install python deps from requirements.txt on the resin.io build server
 RUN pip3 install -r requirements.txt
-RUN sudo apt-get install python3-numpy
-RUN pip install opencv-contrib-python
+RUN pip3 install numpy
+RUN pip3 install opencv-contrib-python
 
 # RaspberryPi dependencies
 RUN READTHEDOCS=True
