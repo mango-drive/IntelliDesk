@@ -19,7 +19,7 @@ COPY requirements.txt requirements.txt
 # pip install python deps from requirements.txt on the resin.io build server
 RUN pip3 install --upgrade pip
 RUN pip3 install -r requirements.txt
-RUN sudo apt-get install python3-opencv
+RUN apt-get install python3-opencv
 
 # RaspberryPi dependencies
 RUN READTHEDOCS=True
