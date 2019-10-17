@@ -16,6 +16,7 @@ COPY requirements.txt requirements.txt
 # pip install python deps from requirements.txt on the resin.io build server
 RUN pip install -r requirements.txt
 # RaspberryPi dependencies
+RUN pip install numpy
 RUN pip install picamera
 
 # This will copy all files in our root to the working  directory in the container
