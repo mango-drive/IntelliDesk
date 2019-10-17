@@ -17,7 +17,7 @@ COPY requirements.txt requirements.txt
 RUN pip install -r requirements.txt
 
 # RaspberryPi dependencies
-ENV READTHEDOCS True
+RUN READTHEDOCS=True
 RUN pip install picamera
 
 # This will copy all files in our root to the working  directory in the container
