@@ -14,7 +14,7 @@ class Artist:
             self.draw_rectangle(frame, x, y, w, h, color)
 
     def draw_workstation(self, frame, workstation):
-          for area in workstation.scene.values():
+          for area in workstation.areas.values():
                 self.draw_rectangle(frame, 
                 area.r.x,
                 area.r.y,
@@ -54,7 +54,6 @@ class Task:
 class Logger:
     def __init__(self, db="tasks.csv"):
         self.db = db
-
     
     def write(self, row):
         with open(self.db, 'a', newline='') as file:
@@ -62,7 +61,7 @@ class Logger:
             writer.writerow(row)
 
     def log(self, task):
-        if task.state != "SAVED"and task.state == "DONE":
+        if task.state == "DONE":
             dump = task.dump()
             self.write(dump)
             task.state = "SAVED"
@@ -81,11 +80,11 @@ class WorkStation:
     0,1-----+-------+-------+
     """
     def __init__(self, w, h):
-        self.scene = []
+        self.areas = []
         x1 = w/3; x2 = 2*w/3
         y1 = h/3; y2 = 2*h/3
 
-        self.scene = {
+        self.areas = {
             "mode": Area("mode", Rectangle(0, 0, x1, y1), COLOR_PURPLE),
             "base": Area("base", Rectangle(0, y1, x1, y1), COLOR_BLUE),
             "from": Area("from", Rectangle(0, y2, x1, y1), COLOR_LIME),
@@ -97,29 +96,28 @@ class WorkStation:
         
     def process(self, barcodes):
         for barcode in barcodes:
-            for area in self.scene.values():
+            for area in self.areas.values():
                 area.acknowledge(barcode)
 
-        self.task.update(mode=self.scene["mode"].get_decoded_barcode_data(),
-                    base=self.scene["base"].get_decoded_barcode_data(),
-                    src=self.scene["from"].get_decoded_barcode_data(),
-                    dest=self.scene["work"].get_decoded_barcode_data()
+        self.task.update(mode=self.areas["mode"].get_decoded_barcode_data(),
+                    base=self.areas["base"].get_decoded_barcode_data(),
+                    src=self.areas["from"].get_decoded_barcode_data(),
+                    dest=self.areas["work"].get_decoded_barcode_data()
         )
 
 
         if (self.user_moves_work_barcode_into_save_area()):
             self.task.state = "DONE"
 
-            for area in self.scene.values():
+            for area in self.areas.values():
                 area.prev_barcode = None
                 area.barcode = None
-            
             
         return self.task
     
     def user_moves_work_barcode_into_save_area(self):
         if (self.task.state == "DOING"):
-            saveBarcode = self.scene["save"].get_most_recent_barcode()
+            saveBarcode = self.areas["save"].get_most_recent_barcode()
             return saveBarcode == self.task.task["work"]
         return False
     

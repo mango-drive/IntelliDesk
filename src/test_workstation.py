@@ -3,14 +3,6 @@ import unittest
 import csv
 from workstation import WorkStation, Rectangle, Area, Task, Logger
 
-def read_lines(file):
-    lines = []
-    with open(file, mode="r") as f:
-        reader = csv.reader(f, delimiter=',')
-        for line in reader:
-            line = [None if i == '' else i for i in line]
-            lines.append(line)
-    return lines
 
 class MockBarcode:
     def __init__(self, rect, data):
@@ -32,6 +24,15 @@ class TestRectangle(unittest.TestCase):
         rect1 = Rectangle(0, 0, 5, 5)
         rect2 = Rectangle(10, 10, 1, 1)
         self.assertFalse(rect1.contains(rect2))
+
+def read_lines(file):
+    lines = []
+    with open(file, mode="r") as f:
+        reader = csv.reader(f, delimiter=',')
+        for line in reader:
+            line = [None if i == '' else i for i in line]
+            lines.append(line)
+    return lines
 
 class TestArea(unittest.TestCase):
     def setUp(self):
