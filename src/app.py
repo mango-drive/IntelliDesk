@@ -13,13 +13,25 @@ from pyzbar import pyzbar
 
 from workstation import Artist, Logger, WorkStation
 
-try:
-  from picamera import picamera
-  usePiCamera = True
-except:
-  usePiCamera = False
+useTestingVideo = True
+usePiCamera = False
 
-if usePiCamera:
+if not useTestingVideo:
+    try:
+        from picamera import picamera
+        usePiCamera = True
+    except:
+        usePiCamera = False
+
+if useTestingVideo:
+    vs = cv2.VideoCapture('../video/test.mp4')
+    if (vs.isOpened() == False):
+        print("Error opening video stream file")
+    else:
+        width = vs.get(cv2.CAP_PROP_FRAME_WIDTH )
+        height = vs.get(cv2.CAP_PROP_FRAME_HEIGHT )
+
+elif usePiCamera:
     vs = VideoStream(src=0, usePicamera=usePiCamera).start()
     (width, height) = vs.stream.camera.resolution
 else:
@@ -36,33 +48,32 @@ workstation = WorkStation(width, height)
 artist = Artist()
 logger = Logger()
 
-queue = []
+task = None
 
 @app.route('/')
 def index():
     """Video streaming home page."""
     return render_template('index.html')
 
+def stream_is_open():
+    if useTestingVideo:
+        return vs.isOpened()
+    else:
+        # return true for cameras
+        return True
+
 def gen():
-    i = 0
     """Video streaming generator function."""
-    while True:
-        
-        
+    while stream_is_open():
         rval, frame = vs.read()
 
         barcodes = pyzbar.decode(frame)
+        global task
         task = workstation.process(barcodes)
-        logger.log(task)
-
-        if i % 50 == 0:
-            global queue
-            queue.append(i)
+        print(task.dump())
 
         artist.draw_workstation(frame, workstation)
         cv2.imwrite('t.jpg', frame)
-
-        i += 1
         
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + open('t.jpg', 'rb').read() + b'\r\n')
@@ -74,15 +85,13 @@ def video_feed():
 
 @app.route('/long_poll')
 def long_poll():
-    global queue
-    if queue:
-        update = jsonify(queue.pop())
+    global task
+    if task:
+        update = jsonify(task.task)
         return update
     else:
         return jsonify("nothing")
     
-
-
 if __name__ == '__main__':
     port = 80 if usePiCamera else 5000
     app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
