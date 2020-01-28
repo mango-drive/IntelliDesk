@@ -43,7 +43,6 @@ class BarcodeAreaObserver:
         if not self.contains(subject): subject.register_with_new_owner()
     
     def register(self, subject):
-        print("Entered region")
         self.last_barcode_id = subject.b_id
 
     def contains(self, subject):
@@ -106,9 +105,9 @@ class WorkStation:
         return inProgress
     
     def on_save(self):
-        print("Save region asked me to save")
+        pass
 
-        
+num_calls = 0
 class Rectangle:
     def __init__(self, x, y, w, h):
         self.x = int(x)
@@ -123,12 +122,60 @@ class Rectangle:
             self.y+self.h > rect.y + rect.h
 
 class Artist:
+    font = cv2.FONT_HERSHEY_DUPLEX
+
     def draw_workstation(self, workstation, frame):
         for area in workstation.areas.values():
             self.draw_rectangle(area.boundary, frame)
 
         for barcode in workstation.observed_barcodes.values():
-            self.draw_rectangle(barcode.rectangle, frame, color=barcode.get_color())
+            color = barcode.get_color()
+            self.draw_rectangle(barcode.rectangle, frame, color=color)
+
+            text_org = (barcode.rectangle.x, barcode.rectangle.y - 20)
+            cv2.putText(frame, barcode.b_id, text_org, self.font, 1, color, 2, cv2.LINE_AA)
         
     def draw_rectangle(self, r, frame, color=GREY, thickness=3):
         cv2.rectangle(frame, (r.x, r.y), (r.x + r.w, r.y + r.h), color, thickness)
+
+def average(list):
+    return sum(list) / len(list)
+
+import json
+def profile_workstation(barcodes_json):
+    print("running")
+
+
+if __name__ == "__main__":
+    import cv2
+    import time
+    from pyzbar import pyzbar
+    vs = cv2.VideoCapture('../vid/test2.mp4')
+
+    w = vs.get(cv2.CAP_PROP_FRAME_WIDTH )
+    h = vs.get(cv2.CAP_PROP_FRAME_HEIGHT )
+
+    workstation = WorkStation(w, h)
+    artist = Artist()
+
+    barcode_frames = []
+    for i in range(500):
+        rval, frame = vs.read()
+        barcodes = pyzbar.decode(frame)
+        workstation.process(barcodes)
+
+    # import cProfile
+    # with cProfile.Profile() as pr:
+    #     for b_list in barcode_frames:
+    #         workstation.process(b_list)
+
+    pr.print_stats()
+
+
+
+
+    
+
+
+
+    

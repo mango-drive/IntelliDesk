@@ -61,6 +61,19 @@ def stream_is_open():
         # return true for cameras
         return True
 
+def development_gen():
+    while stream_is_open():
+        rval, frame = vs.read()
+        barcodes = pyzbar.decode(frame)
+        global task
+        task = workstation.process(barcodes)
+
+        artist.draw_workstation(workstation, frame)
+
+        cv2.imshow('test_video', frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
 def gen():
     """Video streaming generator function."""
     while stream_is_open():
@@ -72,7 +85,7 @@ def gen():
 
         artist.draw_workstation(workstation, frame)
         cv2.imwrite('t.jpg', frame)
-        
+
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + open('t.jpg', 'rb').read() + b'\r\n')
 
@@ -92,4 +105,5 @@ def long_poll():
     
 if __name__ == '__main__':
     port = 80 if usePiCamera else 5000
-    app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
+    development_gen()
+    # app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
