@@ -3,17 +3,17 @@ import cv2
 class ObservableBarcode:
     rectangle = None
     _owner = None
-    observers = []
+    observers = {}
     b_id = None
 
-    def __init__(self, b_id, b_rect, observers):
+    def __init__(self, b_id, b_rect, observers=None):
         self.b_id = b_id
         self.rectangle = Rectangle(*b_rect)
         self.observers = observers
 
     def register_with_new_owner(self):
         self._owner = None
-        for observer in self.observers:
+        for observer in self.observers.values():
             if observer.contains(self): 
                 self._owner = observer
                 break
@@ -33,11 +33,9 @@ class ObservableBarcode:
 
 class BarcodeAreaObserver:
     last_barcode_id = None
-    ba_id = None
     boundary = None
 
-    def __init__(self, ba_id, boundary_rectangle, color):
-        self.ba_id = ba_id
+    def __init__(self, boundary_rectangle, color):
         self.boundary = Rectangle(*boundary_rectangle)
         self.color = color
 
@@ -45,11 +43,20 @@ class BarcodeAreaObserver:
         if not self.contains(subject): subject.register_with_new_owner()
     
     def register(self, subject):
+        print("Entered region")
         self.last_barcode_id = subject.b_id
 
     def contains(self, subject):
         return self.boundary.contains(subject.rectangle)
 
+class SaveAreaObserver(BarcodeAreaObserver):
+    def __init__(self, boundary_rectangle, color, workstation=None):
+        super().__init__(boundary_rectangle, color)
+        self.workstation = workstation
+
+    def register(self, subject):
+        super().register(subject)
+        if self.workstation: self.workstation.on_save()
 
 RED = (211, 47, 47)
 PURPLE = (186, 104, 200)
@@ -65,20 +72,20 @@ class WorkStation:
         y1 = height/3; 
         y2 = 2*height/3
 
-        self.areas = []
-        self.areas.append(BarcodeAreaObserver("mode", (0, 0, x1, y1), PURPLE))
-        self.areas.append(BarcodeAreaObserver("base", (0, y1, x1, y1), BLUE))
-        self.areas.append(BarcodeAreaObserver("from", (0, y2, x1, y1), LIME))
-        self.areas.append(BarcodeAreaObserver("work", (x1, 0, x1, height), RED))
-        self.areas.append(BarcodeAreaObserver("save", (x2, 0, x1, height), YELLOW))
+        self.areas = { "mode": BarcodeAreaObserver((0, 0, x1, y1), PURPLE),
+                       "base": BarcodeAreaObserver((0, y1, x1, y1), BLUE),
+                       "from": BarcodeAreaObserver((0, y2, x1, y1), LIME),
+                       "work": BarcodeAreaObserver((x1, 0, x1, height), RED),
+                       "save": SaveAreaObserver((x2, 0, x1, height), YELLOW, workstation=self)
+        }
 
-        self.observable_barcodes = {}
+        self.observed_barcodes = {}
 
     def update(self, bcode_id, bcode_rect):
-        if bcode_id in self.observable_barcodes.keys():
-            self.observable_barcodes[bcode_id].move_to(bcode_rect)
+        if bcode_id in self.observed_barcodes.keys():
+            self.observed_barcodes[bcode_id].move_to(bcode_rect)
         else:
-            self.observable_barcodes[bcode_id] = ObservableBarcode(bcode_id, bcode_rect, self.areas)
+            self.observed_barcodes[bcode_id] = ObservableBarcode(bcode_id, bcode_rect, observers = self.areas)
 
     def process(self, detected_qrs):
         detected_dict = {}
@@ -88,15 +95,19 @@ class WorkStation:
             detected_dict[bcode_id] = bcode
             self.update(bcode_id, bcode.rect)
         
-        to_remove = list(set(self.observable_barcodes.keys()) - set(detected_dict.keys()))
+        to_remove = list(set(self.observed_barcodes.keys()) - set(detected_dict.keys()))
         for key in to_remove:
-            del self.observable_barcodes[key]
+            del self.observed_barcodes[key]
         
         inProgress = {}
-        for area in self.areas:
-            inProgress[area.ba_id] = area.last_barcode_id
+        for key, area in self.areas.items():
+            inProgress[key] = area.last_barcode_id
         
         return inProgress
+    
+    def on_save(self):
+        print("Save region asked me to save")
+
         
 class Rectangle:
     def __init__(self, x, y, w, h):
@@ -113,10 +124,10 @@ class Rectangle:
 
 class Artist:
     def draw_workstation(self, workstation, frame):
-        for area in workstation.areas:
+        for area in workstation.areas.values():
             self.draw_rectangle(area.boundary, frame)
 
-        for barcode in workstation.observable_barcodes.values():
+        for barcode in workstation.observed_barcodes.values():
             self.draw_rectangle(barcode.rectangle, frame, color=barcode.get_color())
         
     def draw_rectangle(self, r, frame, color=GREY, thickness=3):
