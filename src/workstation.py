@@ -20,10 +20,8 @@ class ObservableBarcode:
         if self._owner: self._owner.register(self)
 
     def notify(self):
-        if self._owner: 
-            self._owner.monitor(self)
-        else: 
-            self.register_with_new_owner()
+        if self._owner: self._owner.monitor(self)
+        else:           self.register_with_new_owner()
 
     def move_to(self, rectangle):
         self.rectangle = rectangle
@@ -44,8 +42,7 @@ class BarcodeAreaObserver:
         self.color = color
 
     def monitor(self, subject):
-        if not self.contains(subject):
-            subject.register_with_new_owner()
+        if not self.contains(subject): subject.register_with_new_owner()
     
     def register(self, subject):
         self.last_barcode_id = subject.b_id
@@ -77,13 +74,11 @@ class WorkStation:
 
         self.observable_barcodes = {}
 
-    def update(self, bcode_id):
+    def update(self, bcode_id, bcode_rect):
         if bcode_id in self.observable_barcodes.keys():
-            self.observable_barcodes[bcode_id].move_to(Rectangle(*bcode.rect))
+            self.observable_barcodes[bcode_id].move_to(Rectangle(*bcode_rect))
         else:
-            print("New barcode", bcode_id)
-            self.observable_barcodes[bcode_id] = ObservableBarcode(bcode_id, bcode.rect, self.areas)
-
+            self.observable_barcodes[bcode_id] = ObservableBarcode(bcode_id, bcode_rect, self.areas)
 
     def process(self, detected_qrs):
         detected_dict = {}
@@ -91,12 +86,11 @@ class WorkStation:
         for bcode in detected_qrs:
             bcode_id = bcode.data.decode("utf-8")
             detected_dict[bcode_id] = bcode
-            self.update(bcode_id)
+            self.update(bcode_id, bcode.rect)
         
         to_remove = list(set(self.observable_barcodes) - set(detected_dict.keys()))
         for key in to_remove:
             del self.observable_barcodes[key]
-
         
         inProgress = {}
         for area in self.areas:
@@ -104,7 +98,6 @@ class WorkStation:
         
         return inProgress
         
-    
 class Rectangle:
     def __init__(self, x, y, w, h):
         self.x = int(x)
@@ -117,7 +110,6 @@ class Rectangle:
             self.x < rect.x and self.y < rect.y and \
             self.x+self.w > rect.x + rect.w and \
             self.y+self.h > rect.y + rect.h
-
 
 class Artist:
     def draw_workstation(self, workstation, frame):
