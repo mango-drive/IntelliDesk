@@ -24,12 +24,12 @@ class ObservableBarcode:
         else:           self.register_with_new_owner()
 
     def move_to(self, rectangle):
-        self.rectangle = rectangle
+        self.rectangle = Rectangle(*rectangle)
         self.notify()
     
     def get_color(self):
         if self._owner: return self._owner.color
-        else:           return COLOR_GREY 
+        else:           return GREY 
 
 class BarcodeAreaObserver:
     last_barcode_id = None
@@ -38,7 +38,7 @@ class BarcodeAreaObserver:
 
     def __init__(self, ba_id, boundary_rectangle, color):
         self.ba_id = ba_id
-        self.boundary = boundary_rectangle
+        self.boundary = Rectangle(*boundary_rectangle)
         self.color = color
 
     def monitor(self, subject):
@@ -51,12 +51,12 @@ class BarcodeAreaObserver:
         return self.boundary.contains(subject.rectangle)
 
 
-COLOR_RED = (211, 47, 47)
-COLOR_PURPLE = (186, 104, 200)
-COLOR_BLUE = (41, 182, 246)
-COLOR_LIME = (102, 255, 0)
-COLOR_YELLOW = (255, 255, 0)
-COLOR_GREY = (171, 178, 185)
+RED = (211, 47, 47)
+PURPLE = (186, 104, 200)
+BLUE = (41, 182, 246)
+LIME = (102, 255, 0)
+YELLOW = (255, 255, 0)
+GREY = (171, 178, 185)
 
 class WorkStation:
     def __init__(self, width, height):
@@ -66,17 +66,17 @@ class WorkStation:
         y2 = 2*height/3
 
         self.areas = []
-        self.areas.append(BarcodeAreaObserver("mode", Rectangle(0, 0, x1, y1), COLOR_PURPLE))
-        self.areas.append(BarcodeAreaObserver("base", Rectangle(0, y1, x1, y1), COLOR_BLUE))
-        self.areas.append(BarcodeAreaObserver("from", Rectangle(0, y2, x1, y1), COLOR_LIME))
-        self.areas.append(BarcodeAreaObserver("work", Rectangle(x1, 0, x1, height), COLOR_RED))
-        self.areas.append(BarcodeAreaObserver("save", Rectangle(x2, 0, x1, height), COLOR_YELLOW))
+        self.areas.append(BarcodeAreaObserver("mode", (0, 0, x1, y1), PURPLE))
+        self.areas.append(BarcodeAreaObserver("base", (0, y1, x1, y1), BLUE))
+        self.areas.append(BarcodeAreaObserver("from", (0, y2, x1, y1), LIME))
+        self.areas.append(BarcodeAreaObserver("work", (x1, 0, x1, height), RED))
+        self.areas.append(BarcodeAreaObserver("save", (x2, 0, x1, height), YELLOW))
 
         self.observable_barcodes = {}
 
     def update(self, bcode_id, bcode_rect):
         if bcode_id in self.observable_barcodes.keys():
-            self.observable_barcodes[bcode_id].move_to(Rectangle(*bcode_rect))
+            self.observable_barcodes[bcode_id].move_to(bcode_rect)
         else:
             self.observable_barcodes[bcode_id] = ObservableBarcode(bcode_id, bcode_rect, self.areas)
 
@@ -88,7 +88,7 @@ class WorkStation:
             detected_dict[bcode_id] = bcode
             self.update(bcode_id, bcode.rect)
         
-        to_remove = list(set(self.observable_barcodes) - set(detected_dict.keys()))
+        to_remove = list(set(self.observable_barcodes.keys()) - set(detected_dict.keys()))
         for key in to_remove:
             del self.observable_barcodes[key]
         
@@ -119,5 +119,5 @@ class Artist:
         for barcode in workstation.observable_barcodes.values():
             self.draw_rectangle(barcode.rectangle, frame, color=barcode.get_color())
         
-    def draw_rectangle(self, r, frame, color=COLOR_GREY, thickness=3):
+    def draw_rectangle(self, r, frame, color=GREY, thickness=3):
         cv2.rectangle(frame, (r.x, r.y), (r.x + r.w, r.y + r.h), color, thickness)
