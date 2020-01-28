@@ -37,9 +37,9 @@ for q in qr_codes:
         version = 1,
         error_correction = qrcode.constants.ERROR_CORRECT_H,
         box_size = 3,
-        border = 2
+        border = 5
     )
-    qr.add_data(q.to_string())
+    qr.add_data(q.data["display_text"])
     qr.make(fit=True)
     img = qr.make_image()
     img.save("../img/{}.jpg".format(q.data["display_text"]))

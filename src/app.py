@@ -11,7 +11,7 @@ from flask_cors import CORS
 from imutils.video import VideoStream
 from pyzbar import pyzbar
 
-from workstation import Artist, Logger, WorkStation
+from workstation import Artist, WorkStation
 
 useTestingVideo = True
 usePiCamera = False
@@ -24,7 +24,7 @@ if not useTestingVideo:
         usePiCamera = False
 
 if useTestingVideo:
-    vs = cv2.VideoCapture('../video/test.mp4')
+    vs = cv2.VideoCapture('../vid/test.mp4')
     if (vs.isOpened() == False):
         print("Error opening video stream file")
     else:
@@ -46,9 +46,8 @@ time.sleep(1.0)
 
 workstation = WorkStation(width, height)
 artist = Artist()
-logger = Logger()
 
-task = None
+task = {"mode": "test", "base": "test", "from": "test", "work": "test", "save": "test"}
 
 @app.route('/')
 def index():
@@ -70,9 +69,8 @@ def gen():
         barcodes = pyzbar.decode(frame)
         global task
         task = workstation.process(barcodes)
-        print(task.dump())
 
-        artist.draw_workstation(frame, workstation)
+        artist.draw_workstation(workstation, frame)
         cv2.imwrite('t.jpg', frame)
         
         yield (b'--frame\r\n'
@@ -87,7 +85,7 @@ def video_feed():
 def long_poll():
     global task
     if task:
-        update = jsonify(task.task)
+        update = jsonify(task)
         return update
     else:
         return jsonify("nothing")

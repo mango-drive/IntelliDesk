@@ -1,11 +1,28 @@
 
-var table, workstationTable
+var table, inProgressTable, workstationTable
 $(document).ready( function () {
-    workstationTable = $('#workstation_table').DataTable({
+    inProgressTable = $('#in_progress_table').DataTable({
         searching: false,
         paging: false,
-        info: false
+        info: false,
+        "columns": [
+            {"data": "mode"},
+            {"data": "base"},
+            {"data": "from"},
+            {"data": "work"},
+            {"data": "save"},
+
+        ]
     })
+
+    inProgressTable.row.add({
+        "mode": "Empty",
+        "base": "Empty",
+        "from": "Empty",
+        "work": "Empty",
+        "save": "Empty",
+    })
+
     table = $('#log_table').DataTable();
 } );
 
@@ -18,5 +35,7 @@ function fetchData() {
         })
         .then((response) => {
             console.log(response)
+            inProgressTable.row(0).data(response)
+            inProgressTable.draw()
         })
 }
