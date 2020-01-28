@@ -138,38 +138,9 @@ class Artist:
     def draw_rectangle(self, r, frame, color=GREY, thickness=3):
         cv2.rectangle(frame, (r.x, r.y), (r.x + r.w, r.y + r.h), color, thickness)
 
-def average(list):
-    return sum(list) / len(list)
-
-import json
-def profile_workstation(barcodes_json):
-    print("running")
 
 
-if __name__ == "__main__":
-    import cv2
-    import time
-    from pyzbar import pyzbar
-    vs = cv2.VideoCapture('../vid/test2.mp4')
 
-    w = vs.get(cv2.CAP_PROP_FRAME_WIDTH )
-    h = vs.get(cv2.CAP_PROP_FRAME_HEIGHT )
-
-    workstation = WorkStation(w, h)
-    artist = Artist()
-
-    barcode_frames = []
-    for i in range(500):
-        rval, frame = vs.read()
-        barcodes = pyzbar.decode(frame)
-        workstation.process(barcodes)
-
-    # import cProfile
-    # with cProfile.Profile() as pr:
-    #     for b_list in barcode_frames:
-    #         workstation.process(b_list)
-
-    pr.print_stats()
 
 
 
