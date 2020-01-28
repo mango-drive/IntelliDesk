@@ -107,7 +107,6 @@ class WorkStation:
     def on_save(self):
         pass
 
-num_calls = 0
 class Rectangle:
     def __init__(self, x, y, w, h):
         self.x = int(x)
