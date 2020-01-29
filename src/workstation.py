@@ -64,6 +64,43 @@ LIME = (102, 255, 0)
 YELLOW = (255, 255, 0)
 GREY = (171, 178, 185)
 
+class State: pass
+
+class TaskPreparing(State):
+    def run(self):
+        pass
+    
+    def next(self, areas):
+        for key, area in areas.items():
+            if key = "save": continue
+            if area.last_barcode_id == None: 
+                return TaskPreparing()
+        return TaskInProgress()
+
+class TaskInProgress(State):
+    def run(self):
+        pass
+
+    def next(self, areas):
+        if areas["work"].last_barcode_id == areas["save"].last_barcode_id:
+            return TaskDone()
+        else:
+            return TaskInProgress()
+
+class TaskDone(State):
+    log_success = False
+    def run(self):
+        print("should log on separate thread")
+        log_success = True
+
+    def next(self, areas):
+        if areas["save"].is_empty():
+            return TaskPreparing()
+        else if not log_success:
+            return TaskDone()
+        else:
+            return TaskSaved()
+
 class WorkStation:
     def __init__(self, width, height):
         x1 = width/3
@@ -79,6 +116,8 @@ class WorkStation:
         }
 
         self.observed_barcodes = {}
+
+        self.state = TaskPreparing()
 
     def update(self, bcode_id, bcode_rect):
         if bcode_id in self.observed_barcodes.keys():
@@ -98,14 +137,9 @@ class WorkStation:
         for key in to_remove:
             del self.observed_barcodes[key]
         
-        inProgress = {}
-        for key, area in self.areas.items():
-            inProgress[key] = area.last_barcode_id
-        
-        return inProgress
+        self.state.run()
+        self.state.next(self.areas)
     
-    def on_save(self):
-        pass
 
 class Rectangle:
     def __init__(self, x, y, w, h):
