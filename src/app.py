@@ -70,7 +70,7 @@ def development_gen():
 
         artist.draw_workstation(workstation, frame)
 
-        cv2.imshow('test_video', frame)
+        # cv2.imshow('test_video', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
@@ -105,5 +105,5 @@ def long_poll():
     
 if __name__ == '__main__':
     port = 80 if usePiCamera else 5000
-    development_gen()
-    # app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
+    # development_gen()
+    app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
