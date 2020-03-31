@@ -1,109 +1,70 @@
-#!/usr/bin/env python
-import argparse
-import datetime
-import time
-import os
+import sys
 
 import cv2
-import imutils
-from flask import Flask, Response, render_template, jsonify
-from flask_cors import CORS
-from imutils.video import VideoStream
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtWidgets import QApplication, QLabel, QWidget
 from pyzbar import pyzbar
-
 from workstation import Artist, WorkStation
 
-useTestingVideo = True
-usePiCamera = False
 
-if not useTestingVideo:
-    try:
-        from picamera import picamera
-        usePiCamera = True
-    except:
-        usePiCamera = False
+class WorkStationThread(QThread):
+    changePixmap = pyqtSignal(QImage)
 
-if useTestingVideo:
-    vs = cv2.VideoCapture('../vid/test.mp4')
-    if (vs.isOpened() == False):
-        print("Error opening video stream file")
-    else:
-        width = vs.get(cv2.CAP_PROP_FRAME_WIDTH )
-        height = vs.get(cv2.CAP_PROP_FRAME_HEIGHT )
+    def __init__(self, parent, src=0):
+        super().__init__(parent)
+        self.capture = cv2.VideoCapture(src)
+        width = self.capture.get(cv2.CAP_PROP_FRAME_WIDTH )
+        height = self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT )
+        self.workstation = WorkStation(width, height)
+        self.artist = Artist()
 
-elif usePiCamera:
-    vs = VideoStream(src=0, usePicamera=usePiCamera).start()
-    (width, height) = vs.stream.camera.resolution
-else:
-    vs = cv2.VideoCapture(0)
-    width = vs.get(cv2.CAP_PROP_FRAME_WIDTH )
-    height = vs.get(cv2.CAP_PROP_FRAME_HEIGHT )
+    def convertToQImage(self, frame):
+        # https://stackoverflow.com/a/55468544/6622587
+        rgbImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        h, w, ch = rgbImage.shape
+        bytesPerLine = ch * w
+        return QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
 
-app = Flask(__name__) 
-CORS(app)
-app._static_folder = os.path.abspath("templates/static/")
-time.sleep(1.0)
+    def run(self):
+        while True:
+            ret, frame = self.capture.read()
+            if ret:
+                barcodes = pyzbar.decode(frame)
+                task = self.workstation.process(barcodes)
+                self.artist.draw_workstation(self.workstation, frame)
 
-workstation = WorkStation(width, height)
-artist = Artist()
+                pix = self.convertToQImage(frame)
+                self.changePixmap.emit(pix)
 
-task = {"mode": "test", "base": "test", "from": "test", "work": "test", "save": "test"}
+class App(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.title = 'OpenCV to PyQT5'
+        self.left = 100
+        self.top = 100
+        self.width = 640
+        self.height = 480
+        self.initUI()
 
-@app.route('/')
-def index():
-    """Video streaming home page."""
-    return render_template('index.html')
+    @pyqtSlot(QImage)
+    def setImage(self, image):
+        self.label.setPixmap(QPixmap.fromImage(image))
 
-def stream_is_open():
-    if useTestingVideo:
-        return vs.isOpened()
-    else:
-        # return true for cameras
-        return True
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        self.setGeometry(self.left, self.top, self.width, self.height)
+        self.resize(self.width, self.height)
+        # create a label
+        self.label = QLabel(self)
+        self.label.resize(self.width, self.height)
+        th = WorkStationThread(self)
+        th.changePixmap.connect(self.setImage)
+        th.start()
+        self.show()
 
-def development_gen():
-    while stream_is_open():
-        rval, frame = vs.read()
-        barcodes = pyzbar.decode(frame)
-        global task
-        task = workstation.process(barcodes)
-
-        artist.draw_workstation(workstation, frame)
-
-        # cv2.imshow('test_video', frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-def gen():
-    """Video streaming generator function."""
-    while stream_is_open():
-        rval, frame = vs.read()
-
-        barcodes = pyzbar.decode(frame)
-        global task
-        task = workstation.process(barcodes)
-
-        artist.draw_workstation(workstation, frame)
-        cv2.imwrite('t.jpg', frame)
-
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + open('t.jpg', 'rb').read() + b'\r\n')
-
-@app.route('/video_feed')
-def video_feed():
-    """Video streaming route. Put this in the src attribute of an img tag."""
-    return Response(gen(),mimetype='multipart/x-mixed-replace; boundary=frame')
-
-@app.route('/long_poll')
-def long_poll():
-    global task
-    if task:
-        update = jsonify(task)
-        return update
-    else:
-        return jsonify("nothing")
-    
 if __name__ == '__main__':
-    port = 80 if usePiCamera else 5000
-    # development_gen()
-    app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
+    app = QApplication(sys.argv)
+    ex = App()
+    ex.show()
+    sys.exit(app.exec_())
