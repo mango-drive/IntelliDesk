@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import QApplication, QLabel, QWidget
 from pyzbar import pyzbar
 from workstation import Artist, WorkStation
 
-
+# TODO: OOP this, allow reading of a VideoFile
 class WorkStationThread(QThread):
     changePixmap = pyqtSignal(QImage)
 
@@ -32,12 +32,18 @@ class WorkStationThread(QThread):
             if ret:
                 barcodes = pyzbar.decode(frame)
                 task = self.workstation.process(barcodes)
+                
+                # TODO if task -> store in db
+
                 self.artist.draw_workstation(self.workstation, frame)
 
                 pix = self.convertToQImage(frame)
                 self.changePixmap.emit(pix)
 
-class App(QWidget):
+# TODO: Is this the cononical way of dealing with PyQT GUIs?
+# TODO: db to table
+# TODO: 2 screens: 1 CRUD screen, 1 record mode screen
+class App(QWidget): # Extend QApplication?
     def __init__(self):
         super().__init__()
         self.title = 'OpenCV to PyQT5'
@@ -55,12 +61,13 @@ class App(QWidget):
         self.setWindowTitle(self.title)
         self.setGeometry(self.left, self.top, self.width, self.height)
         self.resize(self.width, self.height)
-        # create a label
         self.label = QLabel(self)
         self.label.resize(self.width, self.height)
+
         th = WorkStationThread(self)
         th.changePixmap.connect(self.setImage)
         th.start()
+
         self.show()
 
 if __name__ == '__main__':
