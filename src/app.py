@@ -6,6 +6,7 @@ from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QApplication, QLabel, QWidget
 from pyzbar import pyzbar
 from workstation import Artist, WorkStation
+from videostream import WebcamStream
 
 # TODO: OOP this, allow reading of a VideoFile
 class WorkStationThread(QThread):
@@ -13,10 +14,13 @@ class WorkStationThread(QThread):
 
     def __init__(self, parent, src=0):
         super().__init__(parent)
-        self.capture = cv2.VideoCapture(src)
-        width = self.capture.get(cv2.CAP_PROP_FRAME_WIDTH )
-        height = self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT )
-        self.workstation = WorkStation(width, height)
+
+        self.stream = WebcamStream(src)
+
+        w = self.stream.getWidth()
+        h = self.stream.getHeight()
+        self.workstation = WorkStation(w, h)
+
         self.artist = Artist()
 
     def convertToQImage(self, frame):
@@ -28,7 +32,7 @@ class WorkStationThread(QThread):
 
     def run(self):
         while True:
-            ret, frame = self.capture.read()
+            ret, frame = self.stream.read()
             if ret:
                 barcodes = pyzbar.decode(frame)
                 task = self.workstation.process(barcodes)
