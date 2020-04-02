@@ -7,7 +7,7 @@ import imutils
 from imutils.video import VideoStream
 from pyzbar import pyzbar
 
-from workstation import Logger, WorkStation
+# from workstation import Logger, WorkStation
 
 time.sleep(1.0)
 
@@ -28,18 +28,19 @@ found = set()
 while True:
     # Read the frame from the video capture
     ret, frame = vs.read()
-    artist.draw_workstation(frame, workstation) 
+    # artist.draw_workstation(frame, workstation) 
     # Get all barcodes within the frame
     barcodes = pyzbar.decode(frame)
     artist.draw_barcodes(frame, barcodes)
     # Locate the barcodes within the workstation's areas
-    task = workstation.process(barcodes)
+    # task = workstation.process(barcodes)
 
-    logger.log(task)
-          
+    # logger.log(task)
+          # 
     # Display the frame
     cv2.imshow("Barcode Scanner", frame)
     key = cv2.waitKey(1) & 0xFF
 
     if key == ord("q"):
         break
+

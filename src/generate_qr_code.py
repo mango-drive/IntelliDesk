@@ -21,15 +21,10 @@ class QRCode:
         return string
 
 qr_codes = [
-    QRCode("mode", "Cook"),
-    QRCode("mode", "Clean"),
-    QRCode("con", "Plate"),
-    QRCode("con", "Bowl"),
-    QRCode("con", "Glass"),
-    QRCode("ing", "Bread"),
-    QRCode("ing", "Tomatoes"),
-    QRCode("ing", "Chicken"),
-    QRCode("ing", "Salad"),
+    QRCode("test barcode", "ABCDEFGH"),
+    QRCode("test barcode", "98735298"),
+    QRCode("test barcode", "ALKJB837"),
+    QRCode("test barcode", "AOIEBBKJ"),
 ]
 
 for q in qr_codes:

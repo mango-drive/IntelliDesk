@@ -142,6 +142,8 @@ class WorkStation:
         
         self.state.run(task)
         self.state = self.state.next(self.areas)
+
+        return task
     
     def get_task_description():
         return 
