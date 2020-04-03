@@ -8,7 +8,6 @@ from pyzbar import pyzbar
 from workstation import Artist, WorkStation
 from videostream import WebcamStream
 
-# TODO: OOP this, allow reading of a VideoFile
 class WorkStationThread(QThread):
     changePixmap = pyqtSignal(QImage)
 

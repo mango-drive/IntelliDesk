@@ -2,22 +2,7 @@ import abc
 import cv2
 import datetime
 
-class VideoStream(metaclass=abc.ABCMeta):
-    @abc.abstractmethod
-    def getWidth(self):
-        pass
-
-    @abc.abstractmethod
-    def getHeight(self):
-        pass
-
-    @abc.abstractmethod
-    def read(self):
-        pass
-
-        
-
-class WebcamStream(VideoStream):
+class WebcamStream():
     def __init__(self, src):
         self.capture = cv2.VideoCapture(src)
         self.width = self.capture.get(cv2.CAP_PROP_FRAME_WIDTH )
@@ -59,9 +44,6 @@ class FPS:
     def fps(self):
         return self._numFrames / self.elapsed()
 
-
-if __name__ == '__main__':
-    pass
 
 
 
