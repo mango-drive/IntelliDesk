@@ -1,64 +1,80 @@
-#!/usr/bin/env python
-import argparse
-import datetime
-import time
+import sys
 
 import cv2
-import imutils
-from flask import Flask, Response, render_template
-from flask_cors import CORS
-from imutils.video import VideoStream
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, pyqtSlot
+from PyQt5.QtGui import QImage, QPixmap
+from PyQt5.QtWidgets import QApplication, QLabel, QWidget
 from pyzbar import pyzbar
+from workstation import Artist, WorkStation
+from videostream import WebcamStream
 
-from workstation import Artist, Logger, WorkStation
+class WorkStationThread(QThread):
+    changePixmap = pyqtSignal(QImage)
 
-try:
-  from picamera import picamera
-  usePiCamera = True
-except:
-  usePiCamera = False
+    def __init__(self, parent, src=0):
+        super().__init__(parent)
 
-if usePiCamera:
-    vs = VideoStream(src=0, usePicamera=usePiCamera).start()
-    (width, height) = vs.stream.camera.resolution
-else:
-    vs = cv2.VideoCapture(0)
-    width = vs.get(cv2.CAP_PROP_FRAME_WIDTH )
-    height = vs.get(cv2.CAP_PROP_FRAME_HEIGHT )
+        self.stream = WebcamStream(src)
 
-app = Flask(__name__) 
-CORS(app)
-time.sleep(1.0)
+        w = self.stream.getWidth()
+        h = self.stream.getHeight()
+        self.workstation = WorkStation(w, h)
 
-workstation = WorkStation(width, height)
-artist = Artist()
-logger = Logger()
+        self.artist = Artist()
 
-@app.route('/')
-def index():
-    """Video streaming home page."""
-    return render_template('index.html')
+    def convertToQImage(self, frame):
+        # https://stackoverflow.com/a/55468544/6622587
+        rgbImage = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        h, w, ch = rgbImage.shape
+        bytesPerLine = ch * w
+        return QImage(rgbImage.data, w, h, bytesPerLine, QImage.Format_RGB888)
 
-def gen():
-    """Video streaming generator function."""
-    while True:
-        rval, frame = vs.read()
+    def run(self):
+        while True:
+            ret, frame = self.stream.read()
+            if ret:
+                barcodes = pyzbar.decode(frame)
+                task = self.workstation.process(barcodes)
+                
+                # TODO if task -> store in db
 
-        barcodes = pyzbar.decode(frame)
-        task = workstation.process(barcodes)
-        logger.log(task)
+                self.artist.draw_workstation(self.workstation, frame)
 
-        artist.draw_workstation(frame, workstation)
-        cv2.imwrite('t.jpg', frame)
-        
-        yield (b'--frame\r\n'
-               b'Content-Type: image/jpeg\r\n\r\n' + open('t.jpg', 'rb').read() + b'\r\n')
+                pix = self.convertToQImage(frame)
+                self.changePixmap.emit(pix)
 
-@app.route('/video_feed')
-def video_feed():
-    """Video streaming route. Put this in the src attribute of an img tag."""
-    return Response(gen(),mimetype='multipart/x-mixed-replace; boundary=frame')
+# TODO: Is this the cononical way of dealing with PyQT GUIs?
+# TODO: db to table
+# TODO: 2 screens: 1 CRUD screen, 1 record mode screen
+class App(QWidget): # Extend QApplication?
+    def __init__(self):
+        super().__init__()
+        self.title = 'OpenCV to PyQT5'
+        self.left = 100
+        self.top = 100
+        self.width = 640
+        self.height = 480
+        self.initUI()
+
+    @pyqtSlot(QImage)
+    def setImage(self, image):
+        self.label.setPixmap(QPixmap.fromImage(image))
+
+    def initUI(self):
+        self.setWindowTitle(self.title)
+        self.setGeometry(self.left, self.top, self.width, self.height)
+        self.resize(self.width, self.height)
+        self.label = QLabel(self)
+        self.label.resize(self.width, self.height)
+
+        th = WorkStationThread(self)
+        th.changePixmap.connect(self.setImage)
+        th.start()
+
+        self.show()
 
 if __name__ == '__main__':
-    port = 80 if usePiCamera else 5000
-    app.run(host='0.0.0.0', port=port, debug=True, threaded=True)
+    app = QApplication(sys.argv)
+    ex = App()
+    ex.show()
+    sys.exit(app.exec_())

@@ -1,37 +1,22 @@
-
+import abc
 import cv2
 import datetime
-from threading import Thread
-try:
-    test_environment = False
-    from picamera.array import PiRGBArray
-    from picamera import picamera
-except:
-    test_environment = True
 
-class WebcamVideoStream:
-    def __init__(self, src=0):
-        self.stream = cv2.VideoCapture(src)
-        (self.grabbed, self.frame) = self.stream.read()
+class WebcamStream():
+    def __init__(self, src):
+        self.capture = cv2.VideoCapture(src)
+        self.width = self.capture.get(cv2.CAP_PROP_FRAME_WIDTH )
+        self.height = self.capture.get(cv2.CAP_PROP_FRAME_HEIGHT )
 
-        self.stopped = False
+    def getWidth(self):
+        return self.width 
     
-    def start(self):
-        Thread(target=self.update, args=()).start()
-        return self
-
-    def update(self):
-        while True:
-            if self.stopped:
-                return
-            
-            (self.grabbed, self.frame) = self.stream.read()
+    def getHeight(self):
+        return self.height
 
     def read(self):
-        return self.frame
+        return self.capture.read()
 
-    def stop(self):
-        self.stopped = True
 
 class FPS:
     def __init__(self):
@@ -58,5 +43,8 @@ class FPS:
     
     def fps(self):
         return self._numFrames / self.elapsed()
+
+
+
 
 
