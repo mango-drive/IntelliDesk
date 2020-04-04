@@ -43,7 +43,6 @@ class WorkStationThread(QThread):
                 pix = self.convertToQImage(frame)
                 self.changePixmap.emit(pix)
 
-# TODO: Is this the cononical way of dealing with PyQT GUIs?
 # TODO: db to table
 # TODO: 2 screens: 1 CRUD screen, 1 record mode screen
 class App(QWidget): # Extend QApplication?

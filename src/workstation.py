@@ -56,6 +56,7 @@ class BarcodeAreaObserver:
     def register(self, subject):
         self.last_barcode_id = subject.b_id
         self.curr_barcode_id = subject.b_id
+        
 
     def contains(self, subject):
         return self.boundary.contains(subject.rectangle)
@@ -63,44 +64,6 @@ class BarcodeAreaObserver:
     def is_empty(self):
         return self.curr_barcode_id == None
 
-class State: pass
-
-class TaskPreparing(State):
-    def run(self, task):
-        print("Task Preparing state")
-        pass
-    
-    def next(self, areas):
-        for key, area in areas.items():
-            if key == "save": continue
-
-            if area.last_barcode_id == None: 
-                return TaskPreparing()
-        return TaskInProgress()
-
-class TaskInProgress(State):
-    def run(self, task):
-        print("Task In Progress state")
-        pass
-
-    def next(self, areas):
-        if areas["work"].last_barcode_id == areas["save"].curr_barcode_id:
-            return TaskDone()
-        return TaskInProgress()
-
-class TaskDone(State):
-    def __init__(self):
-        self.log_success = False
-    def run(self, task):
-        print("Task Done state")
-        print("Logging task", task)
-        self.log_success = True
-
-    def next(self, areas):
-        if self.log_success:
-            areas["work"].last_barcode_id = None
-            return TaskPreparing()
-        return  TaskDone()
 
 class WorkStation:
     def __init__(self, width, height):
@@ -140,7 +103,6 @@ class WorkStation:
 
         task = " ".join(str(area.last_barcode_id) for area in self.areas.values())
         
-        self.state.run(task)
         self.state = self.state.next(self.areas)
 
         return task
