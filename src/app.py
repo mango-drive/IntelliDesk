@@ -14,7 +14,7 @@ class WorkStationThread(QThread):
     def __init__(self, parent, src=0):
         super().__init__(parent)
 
-        self.stream = WebcamStream(src)
+        self.stream = WebcamStream("../vid/test.mp4")
 
         w = self.stream.getWidth()
         h = self.stream.getHeight()

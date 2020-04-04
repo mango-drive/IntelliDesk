@@ -1,4 +1,5 @@
 import cv2
+from usertask import Task
 
 RED = (211, 47, 47)
 PURPLE = (186, 104, 200)
@@ -81,7 +82,7 @@ class WorkStation:
 
         self.observed_barcodes = {}
 
-        self.state = TaskPreparing()
+        self.task = Task()
 
     def update(self, bcode_id, bcode_rect):
         if bcode_id in self.observed_barcodes.keys():
@@ -101,14 +102,9 @@ class WorkStation:
         for key in to_remove:
             del self.observed_barcodes[key]
 
-        task = " ".join(str(area.last_barcode_id) for area in self.areas.values())
-        
-        self.state = self.state.next(self.areas)
+        self.task.update(self.areas)
 
-        return task
-    
-    def get_task_description():
-        return 
+        return self.task
 
 class Rectangle:
     def __init__(self, x, y, w, h):
